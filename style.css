@@ -1,0 +1,781 @@
+/*
+  ============================================================
+  FILE: style.css
+  PURPOSE: All visual styling for the AI Resume Builder.
+
+  HOW THIS FILE IS ORGANISED:
+    1.  CSS Reset & Base
+    2.  CSS Custom Properties (Design Tokens)
+    3.  Typography
+    4.  Top Navigation Bar
+    5.  Button Styles
+    6.  Main Layout (two-column grid)
+    7.  Editor Panel
+    8.  Form Elements (inputs, textareas, labels)
+    9.  Entry Cards (education, experience, project cards)
+   10.  Preview Panel
+   11.  Resume Sheet Styles (the white "paper" area)
+   12.  Toast Notification
+   13.  Scrollbar Customisation
+   14.  Responsive (mobile breakpoints)
+   15.  Print Styles (@media print)
+  ============================================================
+*/
+
+
+/* ════════════════════════════════════════════════════════════
+   1. CSS RESET & BASE
+   WHY: Different browsers have different default margins,
+        paddings, and box-sizing behaviour. This evens them out
+        so the layout looks the same everywhere.
+════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* padding/border are included in width/height calculations */
+}
+
+/* Remove default list styling wherever we use <ul>/<ol> */
+ul, ol { list-style: none; }
+
+/* Remove underline from all links by default */
+a { text-decoration: none; }
+
+
+/* ════════════════════════════════════════════════════════════
+   2. CSS CUSTOM PROPERTIES (Design Tokens)
+   WHY: Storing colours, fonts, and sizes as variables means
+        we only need to change one line to update the whole app.
+        :root makes them available globally on every element.
+
+   COLOUR SYSTEM:
+     --bg, --surface, --surface2  → three levels of dark background
+     --border                     → subtle dividing lines
+     --accent                     → lime-green highlight colour
+     --text, --muted              → primary and secondary text
+     --danger                     → red for delete/error actions
+     --info                       → blue for informational items
+
+   RESUME COLOURS (used inside the white paper preview):
+     These are separate because the resume uses light backgrounds,
+     while the app UI uses dark backgrounds.
+════════════════════════════════════════════════════════════ */
+:root {
+  /* ── App UI colours (dark theme) */
+  --bg:       #0e0f11;   /* Darkest — page background                    */
+  --surface:  #16181c;   /* Mid dark — cards, panels                     */
+  --surface2: #1e2127;   /* Slightly lighter — inputs, entry cards       */
+  --border:   #2a2d35;   /* Subtle borders between elements              */
+  --accent:   #c8f06e;   /* Lime green — primary interactive colour      */
+  --accent-hover: #b8e05a; /* Slightly darker accent for hover states    */
+  --text:     #f0f0ee;   /* Primary text colour                          */
+  --muted:    #888888;   /* Secondary / label text                       */
+  --danger:   #ff6b6b;   /* Red — delete buttons and error states        */
+  --info:     #5ba4ff;   /* Blue — informational accents                 */
+
+  /* ── Resume paper colours (light theme inside the preview) */
+  --resume-bg:     #ffffff; /* White paper background                    */
+  --resume-text:   #1a1a1a; /* Near-black main text                      */
+  --resume-muted:  #555555; /* Grey for subtitles, dates, locations      */
+  --resume-border: #dddddd; /* Light grey dividers                       */
+
+  /* ── Spacing scale — consistent gaps throughout the app */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 14px;
+  --space-lg: 20px;
+  --space-xl: 28px;
+
+  /* ── Border radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   3. TYPOGRAPHY & BODY BASE
+   WHY: Set the default font, size, and colour once here
+        so every element inherits it automatically.
+════════════════════════════════════════════════════════════ */
+body {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   4. TOP NAVIGATION BAR (.topbar)
+   WHY: Sticky positioning keeps it visible while scrolling.
+        flex layout puts brand on the left, buttons on the right.
+════════════════════════════════════════════════════════════ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-xl);
+  border-bottom: 1px solid var(--border);
+  position: sticky;  /* Stays at top when page scrolls */
+  top: 0;
+  background: var(--bg); /* Needed so content doesn't show through when scrolling */
+  z-index: 100;          /* Sits above all other content */
+}
+
+/* Brand name on the left side of the topbar */
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px;
+  color: var(--text);
+}
+
+/* The small lime-green circle next to the brand name */
+.topbar-brand .dot {
+  width: 10px;
+  height: 10px;
+  background: var(--accent);
+  border-radius: 50%;   /* Makes it a perfect circle */
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Container for the right-side action buttons */
+.topbar-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;       /* Wraps to next line on small screens */
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   5. BUTTON STYLES
+   WHY: We have several distinct button types used across the
+        app. Defining them as modifier classes keeps the HTML
+        clean and styling consistent.
+
+   BUTTON TYPES:
+     (default) → neutral dark button for general actions
+     .primary  → lime green, for the most important action
+     .danger   → red text, for destructive actions (delete)
+     .tab      → pill-shaped section switcher
+     .view-btn → compact toggle for split/edit/preview
+     .add-btn  → dashed outline, for adding new entries
+════════════════════════════════════════════════════════════ */
+
+/* Base button — all buttons inherit these styles */
+button {
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1.4;
+}
+button:hover { background: var(--surface); border-color: #444; }
+
+/* Focus style for keyboard accessibility
+   WHY: Without this, keyboard users can't see which button is focused */
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* .primary — main call-to-action (Download PDF) */
+button.primary {
+  background: var(--accent);
+  color: #111;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+/* .danger — delete / remove buttons on entry cards */
+button.danger {
+  color: var(--danger);
+  border-color: rgba(255, 107, 107, 0.3);
+  background: transparent;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+button.danger:hover { background: rgba(255, 107, 107, 0.1); }
+
+/* .tab — section navigation tabs at top of editor panel */
+button.tab {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  padding: 6px 14px;
+  border-radius: 20px; /* pill shape */
+}
+button.tab.active {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--text);
+}
+button.tab:hover:not(.active) { color: var(--text); }
+
+/* .view-btn — split / edit / preview toggle buttons in topbar */
+button.view-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+button.view-btn.active {
+  background: var(--accent);
+  color: #111;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* .add-btn — dashed "Add Entry" button at bottom of each list section */
+button.add-btn {
+  background: transparent;
+  color: var(--accent);
+  border: 1px dashed rgba(200, 240, 110, 0.35);
+  width: 100%;
+  padding: var(--space-sm);
+  margin-top: var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  text-align: center;
+}
+button.add-btn:hover {
+  background: rgba(200, 240, 110, 0.05);
+  border-color: rgba(200, 240, 110, 0.55);
+}
+
+/* .ai-btn — AI generate buttons (e.g. "Generate Summary with AI") */
+button.ai-btn {
+  background: linear-gradient(135deg, rgba(200,240,110,0.15), rgba(91,164,255,0.15));
+  color: var(--accent);
+  border-color: rgba(200, 240, 110, 0.4);
+  font-size: 12px;
+  padding: 6px 14px;
+  margin-top: var(--space-sm);
+  width: 100%;
+}
+button.ai-btn:hover {
+  background: linear-gradient(135deg, rgba(200,240,110,0.25), rgba(91,164,255,0.25));
+}
+button.ai-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   6. MAIN LAYOUT
+   WHY: Two-column CSS Grid gives us the split editor+preview
+        layout. We use modifier classes to switch views.
+
+   .layout             → default: 50/50 split
+   .layout.editor-only → hide preview, editor fills full width
+   .layout.preview-only→ hide editor, preview fills full width
+   height: calc(...)   → fills remaining viewport below topbar
+════════════════════════════════════════════════════════════ */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* two equal columns */
+  height: calc(100vh - 53px);     /* 53px = topbar height */
+}
+
+/* Editor-only mode: single column, preview hidden */
+.layout.editor-only {
+  grid-template-columns: 1fr;
+}
+.layout.editor-only .preview-panel {
+  display: none;
+}
+
+/* Preview-only mode: single column, editor hidden */
+.layout.preview-only .editor-panel {
+  display: none;
+}
+.layout.preview-only {
+  grid-template-columns: 1fr;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   7. EDITOR PANEL
+   WHY: overflow-y:auto adds a scrollbar only when content
+        overflows, so the topbar doesn't scroll away.
+════════════════════════════════════════════════════════════ */
+.editor-panel {
+  overflow-y: auto;
+  padding: var(--space-lg) 24px;
+  border-right: 1px solid var(--border);
+}
+
+/* Tab row above the form */
+.tabs {
+  display: flex;
+  flex-wrap: wrap; /* wraps to second row if too many tabs */
+  gap: 6px;
+  margin-bottom: var(--space-lg);
+}
+
+/* The white-bordered card that wraps each section's form */
+.section-body {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+}
+
+/* Section heading inside the form card (e.g. "Personal Details") */
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Optional helper text next to the section title (e.g. "comma-separated") */
+.section-title span {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+/* Auto-save indicator shown next to section title */
+.autosave-badge {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 400;
+  margin-left: auto; /* pushes it to the far right */
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.autosave-badge.visible { opacity: 1; }
+
+
+/* ════════════════════════════════════════════════════════════
+   8. FORM ELEMENTS
+   WHY: Custom styles make inputs match the dark theme.
+        The default browser inputs are grey/white and look
+        completely out of place in a dark UI.
+════════════════════════════════════════════════════════════ */
+
+/* Two-column grid for form fields side by side */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* two equal columns */
+  gap: 10px;
+}
+
+/* Single-column variant (used for Skills section) */
+.form-grid.full {
+  grid-template-columns: 1fr;
+}
+
+/* Individual form field wrapper (label + input stacked vertically) */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Span across both columns — used for full-width fields like Portfolio */
+.form-group.span2 {
+  grid-column: 1 / -1; /* -1 means "last column line" */
+}
+
+/* Field labels (e.g. "FULL NAME", "EMAIL") */
+label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+/* Text inputs and textareas */
+input,
+textarea,
+select {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 8px 11px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  width: 100%;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+/* Focused state — accent border makes it clear which field is active */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: #1a1e23;
+}
+
+/* Keyboard focus (same as above but for tab-navigation accessibility) */
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+/* Placeholder text colour (default is too light on dark backgrounds) */
+input::placeholder,
+textarea::placeholder { color: #444; }
+
+/* Textarea — allow vertical resize but not horizontal (prevents layout break) */
+textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   9. ENTRY CARDS
+   WHY: Education, Experience, Project etc. can have multiple
+        entries. Each entry is a visually separated card so
+        the user can clearly see where one ends and another begins.
+════════════════════════════════════════════════════════════ */
+.entry-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  margin-bottom: 10px;
+  position: relative; /* needed if we ever want absolute-positioned children */
+}
+
+/* Top row of the card: label on left, delete button on right */
+.entry-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+/* Small grey label like "Education Entry", "Project" */
+.entry-card-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   10. PREVIEW PANEL
+   WHY: Slightly darker background than the resume sheet
+        creates a "paper on desk" visual effect.
+════════════════════════════════════════════════════════════ */
+.preview-panel {
+  overflow-y: auto;
+  padding: var(--space-lg);
+  background: #2a2d35; /* slightly lighter than --bg to contrast with the white resume */
+}
+
+/* Small uppercase label above the resume sheet */
+.preview-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   11. RESUME SHEET STYLES
+   WHY: These styles make the preview look like an actual
+        printed resume on white paper. All classes here start
+        with "r-" to avoid confusion with app UI classes.
+
+   IMPORTANT: These same styles are duplicated inside
+   downloadResume() in script.js for the printable HTML export.
+   If you change a style here, update it there too.
+════════════════════════════════════════════════════════════ */
+
+/* The white "paper" container */
+#resume-sheet {
+  background: var(--resume-bg);
+  color: var(--resume-text);
+  padding: 36px 40px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12.5px;
+  line-height: 1.6;
+  max-width: 760px;
+  margin: 0 auto;      /* centred horizontally in the preview panel */
+  border-radius: 4px;
+  min-height: 900px;   /* prevents the sheet from collapsing when empty */
+}
+
+/* ── Resume Header (name + contact info at the top) */
+.r-header {
+  text-align: center;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 2.5px solid #1a1a1a; /* thick bottom rule under the header */
+}
+
+/* Candidate's full name — large serif display font */
+.r-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  letter-spacing: 0.5px;
+  color: #111;
+  margin-bottom: 5px;
+}
+
+/* Job title / target role line under the name */
+.r-title {
+  font-size: 13px;
+  color: var(--resume-muted);
+  margin-bottom: 5px;
+}
+
+/* Contact info row: email | phone | location | linkedin etc. */
+.r-contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px; /* 4px vertical, 16px horizontal gap between items */
+  font-size: 11.5px;
+  color: var(--resume-muted);
+}
+
+/* ── Section title bar (e.g. "EDUCATION", "PROJECTS") */
+.r-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #111;
+  border-bottom: 1.5px solid #111;
+  padding-bottom: 3px;
+  margin: 14px 0 8px;
+}
+
+/* ── Individual entry within a section */
+.r-entry {
+  margin-bottom: 8px;
+}
+
+/* Top line of an entry: title on left, date on right */
+.r-entry-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+/* Bold title (degree name, job title, project name) */
+.r-entry-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+/* Subtitle line (institution name, company, tech stack) */
+.r-entry-sub {
+  font-size: 12px;
+  color: var(--resume-muted);
+  margin-bottom: 3px;
+}
+
+/* Date/year shown on the right side of the entry header */
+.r-entry-date {
+  font-size: 11.5px;
+  color: var(--resume-muted);
+  white-space: nowrap; /* prevents date from breaking to a new line */
+  margin-left: 10px;
+  flex-shrink: 0;      /* prevents date from being compressed */
+}
+
+/* Description / bullet points text */
+.r-entry-desc {
+  font-size: 12px;
+  color: #333;
+  white-space: pre-wrap; /* preserves newlines — user types bullet points with Enter */
+  margin-top: 3px;
+}
+
+/* ── Skills section layout */
+.r-skills-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* One skill row: "Technical: Java, Python, React..." */
+.r-skill-row {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+/* "Technical:", "Tools:", "Soft Skills:" label */
+.r-skill-label {
+  font-weight: 600;
+  min-width: 110px; /* fixed width aligns all values in a neat column */
+  color: #333;
+  flex-shrink: 0;
+}
+
+/* The comma-separated skills value */
+.r-skill-val { color: #444; }
+
+/* ── Certification entry row */
+.r-cert-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 5px;
+  font-size: 12px;
+}
+.r-cert-title { font-weight: 600; }
+.r-cert-year  { font-size: 11px; color: #666; }
+
+
+/* ════════════════════════════════════════════════════════════
+   12. TOAST NOTIFICATION
+   WHY: Shows brief feedback messages (e.g. "Saved!") without
+        interrupting the user's workflow.
+        display:none by default; script sets display:block to show it.
+════════════════════════════════════════════════════════════ */
+.toast {
+  position: fixed;   /* stays in corner regardless of scroll position */
+  bottom: 24px;
+  right: 24px;
+  background: var(--accent);
+  color: #111;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13px;
+  z-index: 999;      /* above everything else */
+  display: none;
+  animation: toastIn 0.3s ease;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   13. SCROLLBAR CUSTOMISATION
+   WHY: The default browser scrollbar is large and bright.
+        This creates a slim, dark scrollbar that matches the UI.
+        Note: ::-webkit-scrollbar only works in Chrome/Safari/Edge.
+        Firefox uses the scrollbar-width/color properties below.
+════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: var(--surface); }
+::-webkit-scrollbar-thumb   { background: #333; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #444; }
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #333 var(--surface);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   14. RESPONSIVE — MOBILE BREAKPOINTS
+   WHY: On screens narrower than 900px (most phones and small
+        tablets), a two-column layout is too cramped. We switch
+        to single column and hide the preview by default.
+        The user can switch to Preview mode to see the resume.
+════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+
+  /* Switch layout to single column */
+  .layout {
+    grid-template-columns: 1fr;
+    height: auto;            /* allow natural height on mobile */
+  }
+
+  /* Hide preview panel by default on mobile */
+  .layout .preview-panel { display: none; }
+
+  /* Show preview only when .preview-only class is set */
+  .layout.preview-only .preview-panel { display: block; }
+  .layout.preview-only .editor-panel  { display: none;  }
+
+  /* Split view on mobile = show both stacked (scroll down for preview) */
+  .layout.split-view .preview-panel { display: block; }
+
+  /* Make form fields single column on mobile */
+  .form-grid { grid-template-columns: 1fr; }
+
+  /* Topbar wraps on small screens */
+  .topbar { flex-wrap: wrap; gap: 8px; padding: 10px 16px; }
+
+  /* Resume sheet padding reduced on mobile */
+  #resume-sheet { padding: 24px 20px; }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   15. PRINT STYLES (@media print)
+   WHY: When the user prints or saves as PDF via the browser,
+        we want ONLY the resume content to appear — no toolbar,
+        no editor, no dark background. Just the white paper.
+════════════════════════════════════════════════════════════ */
+@media print {
+   
+  @page {
+    margin: 0;        /* removes header/footer area where browser prints URL/time */
+    size: A4;         /* optional: fixes paper size */
+  }
+
+  body {
+    padding: 36px 40px;   /* add back padding since @page margin is now 0 */
+  }
+
+
+  /* Hide everything except the resume */
+  .topbar,
+  .editor-panel,
+  .preview-label,
+  .topbar-actions {
+    display: none !important;
+  }
+
+  /* Remove the two-column layout */
+  .layout {
+    display: block !important;
+  }
+
+  /* Remove grey background from preview panel */
+  .preview-panel {
+    padding: 0;
+    background: #fff !important;
+  }
+
+  /* Hide the preview panel scrollbar when printing */
+  .preview-panel::-webkit-scrollbar { display: none; }
+
+  /* Remove box-shadow and border-radius from resume sheet */
+  #resume-sheet {
+    box-shadow: none;
+    border-radius: 0;
+    max-width: 100%;
+    padding: 0;
+  }
+}

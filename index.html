@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  FILE: index.html
+  PURPOSE: Main structure of the AI Resume Builder app.
+           This file contains only the HTML "skeleton" —
+           what elements exist and how they are arranged.
+           All visual styles are in style.css
+           All logic / behaviour is in script.js
+  ============================================================
+-->
+<html lang="en">
+
+<head>
+  <!-- ── Character encoding: tells browser to use UTF-8 (supports all languages) -->
+  <meta charset="UTF-8" />
+
+  <!-- ── Responsive viewport: makes the page scale correctly on mobile screens -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- ── SEO / tab title -->
+  <meta name="description" content="Resumefy — Free AI-powered resume builder. Create, preview and download a professional resume in minutes." />
+  <title>Resumify</title>
+
+  <!--
+    ── Google Fonts
+    We load two font families:
+      • DM Serif Display — elegant serif used for the big resume name and section headings
+      • DM Sans         — clean sans-serif used for all body text, inputs, buttons
+    The "ital@0;1" part loads both regular and italic variants of DM Serif.
+    The "wght@300;400;500;600" loads four weights of DM Sans.
+  -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ── Main stylesheet (all CSS lives here) -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+  <!-- ════════════════════════════════════════════════════════
+       TOP NAVIGATION BAR
+       Contains: app branding on the left, view-toggle buttons
+       and download button on the right.
+  ═══════════════════════════════════════════════════════════ -->
+  <nav class="topbar" aria-label="App toolbar">
+
+    <!-- Brand / logo area -->
+    <div class="topbar-brand">
+      <!-- Decorative green dot — purely visual, hidden from screen readers -->
+      <span class="dot" aria-hidden="true"></span>
+      Resumify
+    </div>
+
+    <!-- Right-side action buttons -->
+    <div class="topbar-actions" id="view-btns">
+
+      <!--
+        View toggle buttons — these change the layout between:
+          split   → editor on left, preview on right (default)
+          editor  → only the editor panel is visible
+          preview → only the preview panel is visible
+        onclick calls setView() defined in script.js
+      -->
+      <button class="view-btn active" onclick="setView('split')"   aria-label="Split view">⊞ Split</button>
+      <button class="view-btn"        onclick="setView('editor')"  aria-label="Editor only">✏ Edit</button>
+      <button class="view-btn"        onclick="setView('preview')" aria-label="Preview only">👁 Preview</button>
+
+      <!-- Download button — calls downloadResume() in script.js -->
+      <button class="primary" onclick="downloadResume()">⬇ Download PDF</button>
+    </div>
+  </nav>
+
+
+  <!-- ════════════════════════════════════════════════════════
+       MAIN TWO-COLUMN LAYOUT
+       Left  = Editor Panel (form inputs)
+       Right = Preview Panel (live resume render)
+
+       CSS class "layout" applies the two-column grid.
+       JavaScript adds/removes modifier classes:
+         .editor-only   → hides preview
+         .preview-only  → hides editor
+  ═══════════════════════════════════════════════════════════ -->
+  <main class="layout" id="main-layout">
+
+
+    <!-- ── LEFT PANEL: EDITOR ──────────────────────────────
+         Contains section tabs at the top and the active
+         section's form fields below.
+    ─────────────────────────────────────────────────────── -->
+    <aside class="editor-panel" aria-label="Resume editor">
+
+      <!--
+        Section Tab Buttons
+        These are rendered dynamically by renderTabs() in script.js.
+        Clicking a tab calls switchSection(id) which re-renders
+        both the tabs (to show active state) and the form below.
+      -->
+      <div class="tabs" id="tabs" role="tablist" aria-label="Resume sections"></div>
+
+      <!--
+        Active Section Form
+        Content here is completely replaced by renderSection() in script.js
+        whenever the user clicks a tab. Each section has its own
+        HTML template inside sectionRenderers{} in script.js.
+      -->
+      <div class="section-body" id="section-content" role="tabpanel"></div>
+
+    </aside>
+
+
+    <!-- ── RIGHT PANEL: LIVE PREVIEW ───────────────────────
+         Shows a real-time rendered version of the resume.
+         Updated every time the user types anything.
+    ─────────────────────────────────────────────────────── -->
+    <section class="preview-panel" aria-label="Resume preview">
+
+      <!-- Small label above the white resume sheet -->
+      <p class="preview-label">📄 Live Preview</p>
+
+      <!--
+        The white "paper" resume sheet.
+        All resume HTML is injected here by renderPreview() in script.js.
+        This element is also what gets printed when the user downloads.
+      -->
+      <div id="resume-sheet" aria-live="polite"></div>
+
+    </section>
+
+  </main><!-- /main-layout -->
+
+
+  <!-- ════════════════════════════════════════════════════════
+       TOAST NOTIFICATION
+       A small popup shown at the bottom-right corner for
+       short messages like "Saved!" or "Copied!".
+       Controlled by showToast(message) in script.js.
+  ═══════════════════════════════════════════════════════════ -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+
+  <!-- ── JavaScript (all app logic lives here, loaded last so DOM is ready) -->
+  <script src="script.js"></script>
+
+</body>
+</html>
